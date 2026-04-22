@@ -1,6 +1,5 @@
 import axios from 'axios'
-
-const TOKEN_KEY = 'rjma_token'
+import { STORAGE_KEYS } from '@/lib/storage'
 
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api',
@@ -11,7 +10,7 @@ export const apiClient = axios.create({
 })
 
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY)
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -22,8 +21,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem(TOKEN_KEY)
-      localStorage.removeItem('rjma_user')
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+      localStorage.removeItem(STORAGE_KEYS.USER)
       window.location.href = '/login'
     }
     return Promise.reject(error)

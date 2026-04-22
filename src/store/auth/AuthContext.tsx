@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 import type { AuthState, User, LoginCredentials } from '@/types'
 import { authService } from '@/services/api/auth'
+import { STORAGE_KEYS } from '@/lib/storage'
 
 interface AuthContextValue extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>
@@ -9,13 +10,10 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-const TOKEN_KEY = 'rjma_token'
-const USER_KEY = 'rjma_user'
-
 function loadFromStorage(): { token: string | null; user: User | null } {
   try {
-    const token = localStorage.getItem(TOKEN_KEY)
-    const raw = localStorage.getItem(USER_KEY)
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
+    const raw = localStorage.getItem(STORAGE_KEYS.USER)
     const user = raw ? (JSON.parse(raw) as User) : null
     return { token, user }
   } catch {
@@ -31,17 +29,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     const response = await authService.login(credentials)
-    localStorage.setItem(TOKEN_KEY, response.token)
-    localStorage.setItem(USER_KEY, JSON.stringify(response.user))
+    localStorage.setItem(STORAGE_KEYS.TOKEN, response.token)
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user))
     setToken(response.token)
     setUser(response.user)
   }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
+    localStorage.removeItem(STORAGE_KEYS.TOKEN)
+    localStorage.removeItem(STORAGE_KEYS.USER)
     setToken(null)
     setUser(null)
+    // Fire-and-forget: invalida el token en servidor si el backend lo soporta
+    authService.logout().catch(() => {})
   }, [])
 
   return (
