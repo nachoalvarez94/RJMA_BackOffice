@@ -1,23 +1,22 @@
-// PROVISIONAL: ajustar campos cuando se confirme el contrato con el backend.
-export type ClientStatus = 'active' | 'inactive'
-
+// Nombres de campo en español para coincidir con el backend RJMA.
+// PROVISIONAL: ajustar si el contrato real difiere.
 export interface Client {
   id: string
-  name: string
+  nombre: string
   email: string
-  phone?: string
-  address?: string
-  taxId?: string      // NIF / CIF
-  status: ClientStatus
-  createdAt: string
+  telefono?: string
+  direccion?: string
+  nif?: string
+  activo: boolean
+  creadoEn: string
 }
 
 export interface CreateClientDto {
-  name: string
+  nombre: string
   email: string
-  phone?: string
-  address?: string
-  taxId?: string
+  telefono?: string
+  direccion?: string
+  nif?: string
 }
 
-export type UpdateClientDto = Partial<CreateClientDto> & { status?: ClientStatus }
+export type UpdateClientDto = Partial<CreateClientDto>

@@ -1,37 +1,35 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { Client } from '@/types'
-import { clientsService, type ClientFilters } from '@/services/api/clients'
+import type { AdminUser } from '@/types'
+import { usersService, type UserFilters } from '@/services/api/users'
 import { getErrorMessage } from '@/lib/apiError'
 
-interface UseClientsReturn {
-  clients: Client[]
+interface UseUsersReturn {
+  users: AdminUser[]
   total: number
   loading: boolean
   error: string | null
   page: number
   pageSize: number
-  filters: ClientFilters
+  filters: UserFilters
   setPage: (page: number) => void
-  setFilters: (filters: ClientFilters) => void
+  setFilters: (filters: UserFilters) => void
   refresh: () => void
 }
 
 const PAGE_SIZE = 20
 
-export function useClients(): UseClientsReturn {
-  const [clients, setClients] = useState<Client[]>([])
+export function useUsers(): UseUsersReturn {
+  const [users, setUsers] = useState<AdminUser[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [page, setPageState] = useState(1)
-  const [filters, setFiltersState] = useState<ClientFilters>({})
+  const [filters, setFiltersState] = useState<UserFilters>({})
   const [tick, setTick] = useState(0)
 
   const refresh = useCallback(() => setTick((n) => n + 1), [])
-
   const setPage = useCallback((p: number) => setPageState(p), [])
-
-  const setFilters = useCallback((f: ClientFilters) => {
+  const setFilters = useCallback((f: UserFilters) => {
     setFiltersState(f)
     setPageState(1)
   }, [])
@@ -41,11 +39,11 @@ export function useClients(): UseClientsReturn {
     setLoading(true)
     setError(null)
 
-    clientsService
+    usersService
       .getAll({ ...filters, page, pageSize: PAGE_SIZE })
       .then((res) => {
         if (!cancelled) {
-          setClients(res.data)
+          setUsers(res.data)
           setTotal(res.total)
           setLoading(false)
         }
@@ -60,5 +58,5 @@ export function useClients(): UseClientsReturn {
     return () => { cancelled = true }
   }, [filters, page, tick])
 
-  return { clients, total, loading, error, page, pageSize: PAGE_SIZE, filters, setPage, setFilters, refresh }
+  return { users, total, loading, error, page, pageSize: PAGE_SIZE, filters, setPage, setFilters, refresh }
 }

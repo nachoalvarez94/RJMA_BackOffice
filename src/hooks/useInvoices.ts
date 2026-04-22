@@ -1,37 +1,35 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { Client } from '@/types'
-import { clientsService, type ClientFilters } from '@/services/api/clients'
+import type { Invoice } from '@/types'
+import { invoicesService, type InvoiceFilters } from '@/services/api/invoices'
 import { getErrorMessage } from '@/lib/apiError'
 
-interface UseClientsReturn {
-  clients: Client[]
+interface UseInvoicesReturn {
+  invoices: Invoice[]
   total: number
   loading: boolean
   error: string | null
   page: number
   pageSize: number
-  filters: ClientFilters
+  filters: InvoiceFilters
   setPage: (page: number) => void
-  setFilters: (filters: ClientFilters) => void
+  setFilters: (filters: InvoiceFilters) => void
   refresh: () => void
 }
 
 const PAGE_SIZE = 20
 
-export function useClients(): UseClientsReturn {
-  const [clients, setClients] = useState<Client[]>([])
+export function useInvoices(): UseInvoicesReturn {
+  const [invoices, setInvoices] = useState<Invoice[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [page, setPageState] = useState(1)
-  const [filters, setFiltersState] = useState<ClientFilters>({})
+  const [filters, setFiltersState] = useState<InvoiceFilters>({})
   const [tick, setTick] = useState(0)
 
   const refresh = useCallback(() => setTick((n) => n + 1), [])
-
   const setPage = useCallback((p: number) => setPageState(p), [])
-
-  const setFilters = useCallback((f: ClientFilters) => {
+  const setFilters = useCallback((f: InvoiceFilters) => {
     setFiltersState(f)
     setPageState(1)
   }, [])
@@ -41,11 +39,11 @@ export function useClients(): UseClientsReturn {
     setLoading(true)
     setError(null)
 
-    clientsService
+    invoicesService
       .getAll({ ...filters, page, pageSize: PAGE_SIZE })
       .then((res) => {
         if (!cancelled) {
-          setClients(res.data)
+          setInvoices(res.data)
           setTotal(res.total)
           setLoading(false)
         }
@@ -60,5 +58,5 @@ export function useClients(): UseClientsReturn {
     return () => { cancelled = true }
   }, [filters, page, tick])
 
-  return { clients, total, loading, error, page, pageSize: PAGE_SIZE, filters, setPage, setFilters, refresh }
+  return { invoices, total, loading, error, page, pageSize: PAGE_SIZE, filters, setPage, setFilters, refresh }
 }

@@ -1,28 +1,41 @@
-import type { Client, CreateClientDto, UpdateClientDto, PaginatedResponse, PaginationParams } from '@/types'
+import type { Client, CreateClientDto, UpdateClientDto, PaginatedResponse } from '@/types'
 import { apiClient } from './client'
 
+export interface ClientFilters {
+  nombre?: string
+  activo?: boolean
+  page?: number
+  pageSize?: number
+}
+
 export const clientsService = {
-  async getAll(params: PaginationParams): Promise<PaginatedResponse<Client>> {
-    const { data } = await apiClient.get<PaginatedResponse<Client>>('/clients', { params })
+  async getAll(filters: ClientFilters = {}): Promise<PaginatedResponse<Client>> {
+    const { data } = await apiClient.get<PaginatedResponse<Client>>('/admin/clientes', { params: filters })
     return data
   },
 
   async getById(id: string): Promise<Client> {
-    const { data } = await apiClient.get<Client>(`/clients/${id}`)
+    const { data } = await apiClient.get<Client>(`/admin/clientes/${id}`)
     return data
   },
 
   async create(dto: CreateClientDto): Promise<Client> {
-    const { data } = await apiClient.post<Client>('/clients', dto)
+    const { data } = await apiClient.post<Client>('/admin/clientes', dto)
     return data
   },
 
   async update(id: string, dto: UpdateClientDto): Promise<Client> {
-    const { data } = await apiClient.patch<Client>(`/clients/${id}`, dto)
+    const { data } = await apiClient.put<Client>(`/admin/clientes/${id}`, dto)
     return data
   },
 
-  async remove(id: string): Promise<void> {
-    await apiClient.delete(`/clients/${id}`)
+  async activar(id: string): Promise<Client> {
+    const { data } = await apiClient.patch<Client>(`/admin/clientes/${id}/activar`)
+    return data
+  },
+
+  async desactivar(id: string): Promise<Client> {
+    const { data } = await apiClient.patch<Client>(`/admin/clientes/${id}/desactivar`)
+    return data
   },
 }
