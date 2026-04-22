@@ -14,16 +14,58 @@ export const authService = {
       throw new Error('Credenciales incorrectas')
     }
 
-    // Llamada real al backend
-    // PROVISIONAL: el endpoint y la forma del response deben verificarse
-    // contra la implementación real. Se normalizan los campos más comunes.
-    const { data } = await apiClient.post<Record<string, unknown>>('/auth/login', credentials)
+    // --- Diagnóstico (solo en desarrollo) ---
+    if (import.meta.env.DEV) {
+      console.group('[RJMA Auth] Login request')
+      console.log('URL:', `${apiClient.defaults.baseURL}/auth/login`)
+      console.log('Payload:', { email: credentials.email, password: '***' })
+      console.groupEnd()
+    }
+
+    let rawData: Record<string, unknown>
+    try {
+      const { data } = await apiClient.post<Record<string, unknown>>('/auth/login', credentials)
+      rawData = data
+
+      if (import.meta.env.DEV) {
+        console.group('[RJMA Auth] Login response OK')
+        console.log('Raw response:', rawData)
+        console.groupEnd()
+      }
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        const axiosErr = err as { response?: { status: number; data: unknown }; message: string }
+        console.group('[RJMA Auth] Login response ERROR')
+        console.log('Status:', axiosErr.response?.status)
+        console.log('Body:', axiosErr.response?.data)
+        console.log('Message:', axiosErr.message)
+        console.groupEnd()
+      }
+      throw err
+    }
+
+    // Normalización defensiva — cubre los formatos más habituales de backends REST/Spring/NestJS
+    const token =
+      (rawData.token as string | undefined) ??
+      (rawData.access_token as string | undefined) ??
+      (rawData.accessToken as string | undefined)
+
+    if (!token) {
+      if (import.meta.env.DEV) {
+        console.error('[RJMA Auth] No se encontró token en la respuesta. Campos recibidos:', Object.keys(rawData))
+      }
+      throw new Error('La respuesta del servidor no contiene un token reconocible.')
+    }
+
+    // El objeto usuario puede venir anidado en .user, o en el propio root
+    const userObj = (rawData.user as Record<string, unknown> | undefined) ?? rawData
+
     return {
-      token: (data.token ?? data.access_token) as string,
+      token,
       user: {
-        id: String((data.user as Record<string, unknown>)?.id ?? data.id),
-        email: (data.user as Record<string, unknown>)?.email as string ?? credentials.email,
-        name: ((data.user as Record<string, unknown>)?.nombre ?? (data.user as Record<string, unknown>)?.name) as string,
+        id: String(userObj.id ?? ''),
+        email: (userObj.email as string | undefined) ?? credentials.email,
+        name: ((userObj.nombre ?? userObj.name ?? userObj.username) as string | undefined) ?? credentials.email,
         role: 'ADMIN',
       },
     }

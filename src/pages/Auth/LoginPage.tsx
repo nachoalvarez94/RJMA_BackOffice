@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Card, Form, Input, Button, Typography, Alert, Space } from 'antd'
 import { LockOutlined, MailOutlined } from '@ant-design/icons'
 import { useAuth } from '@/store/auth/AuthContext'
+import { getErrorMessage } from '@/lib/apiError'
 import type { LoginCredentials } from '@/types'
 
 const { Title, Text } = Typography
@@ -20,7 +21,7 @@ export function LoginPage() {
       await login(values)
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión')
+      setError(getErrorMessage(err, 'Error al iniciar sesión'))
     } finally {
       setLoading(false)
     }
