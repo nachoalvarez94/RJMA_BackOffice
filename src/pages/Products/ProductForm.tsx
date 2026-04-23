@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Modal, Form, Input, InputNumber, Button } from 'antd'
+import { Modal, Form, Input, InputNumber, Switch } from 'antd'
 import type { Product, CreateProductDto, UpdateProductDto } from '@/types'
 
 interface ProductFormProps {
@@ -18,29 +18,34 @@ export function ProductForm({ open, product, loading, onSubmit, onCancel }: Prod
     if (open) {
       form.setFieldsValue(
         product
-          ? { nombre: product.nombre, referencia: product.referencia, precio: product.precio, descripcion: product.descripcion }
-          : { nombre: '', referencia: '', precio: undefined, descripcion: '' }
+          ? {
+              nombre:        product.nombre?.trim()        ?? '',
+              codigoInterno: product.codigoInterno?.trim() ?? '',
+              codigoBarras:  product.codigoBarras?.trim()  ?? '',
+              precio:        product.precio,
+              activo:        product.activo,
+            }
+          : { nombre: '', codigoInterno: '', codigoBarras: '', precio: undefined, activo: true }
       )
     }
   }, [open, product, form])
-
-  const handleFinish = async (values: CreateProductDto) => {
-    await onSubmit(values)
-  }
 
   return (
     <Modal
       title={isEdit ? 'Editar producto' : 'Nuevo producto'}
       open={open}
       onCancel={onCancel}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={isEdit ? 'Guardar cambios' : 'Crear producto'}
+      cancelText="Cancelar"
+      confirmLoading={loading}
       destroyOnClose
       width={520}
     >
       <Form
         form={form}
         layout="vertical"
-        onFinish={handleFinish}
+        onFinish={onSubmit}
         autoComplete="off"
         style={{ marginTop: 16 }}
         requiredMark={false}
@@ -48,28 +53,24 @@ export function ProductForm({ open, product, loading, onSubmit, onCancel }: Prod
         <Form.Item name="nombre" label="Nombre" rules={[{ required: true, message: 'Requerido' }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="referencia" label="Referencia" rules={[{ required: true, message: 'Requerido' }]}>
+
+        <Form.Item name="codigoInterno" label="Código interno">
           <Input />
         </Form.Item>
+
+        <Form.Item name="codigoBarras" label="Código de barras">
+          <Input placeholder="Dejar vacío si no aplica" />
+        </Form.Item>
+
         <Form.Item name="precio" label="Precio (€)" rules={[{ required: true, message: 'Requerido' }]}>
-          <InputNumber
-            min={0}
-            precision={2}
-            style={{ width: '100%' }}
-            addonAfter="€"
-          />
+          <InputNumber min={0} precision={2} style={{ width: '100%' }} addonAfter="€" />
         </Form.Item>
-        <Form.Item name="descripcion" label="Descripción">
-          <Input.TextArea rows={3} />
-        </Form.Item>
-        <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-          <Button onClick={onCancel} style={{ marginRight: 8 }}>
-            Cancelar
-          </Button>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            {isEdit ? 'Guardar cambios' : 'Crear producto'}
-          </Button>
-        </Form.Item>
+
+        {isEdit && (
+          <Form.Item name="activo" label="Estado" valuePropName="checked">
+            <Switch checkedChildren="Activo" unCheckedChildren="Inactivo" />
+          </Form.Item>
+        )}
       </Form>
     </Modal>
   )

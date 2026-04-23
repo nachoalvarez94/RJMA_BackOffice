@@ -75,17 +75,38 @@ export function ProductsPage() {
     setFilters({})
   }
 
+  const t = (v?: string | null) => v?.trim() || '—'
+
   const columns: ColumnsType<Product> = [
-    { title: 'Nombre', dataIndex: 'nombre', key: 'nombre' },
-    { title: 'Referencia', dataIndex: 'referencia', key: 'referencia' },
+    {
+      title: 'Nombre',
+      dataIndex: 'nombre',
+      key: 'nombre',
+      ellipsis: true,
+      render: (v: string) => t(v),
+    },
+    {
+      title: 'Cód. interno',
+      dataIndex: 'codigoInterno',
+      key: 'codigoInterno',
+      width: 120,
+      render: (v?: string) => t(v),
+    },
+    {
+      title: 'Cód. barras',
+      dataIndex: 'codigoBarras',
+      key: 'codigoBarras',
+      width: 140,
+      render: (v?: string | null) => t(v),
+    },
     {
       title: 'Precio',
       dataIndex: 'precio',
       key: 'precio',
+      width: 100,
       align: 'right',
       render: (v: number) => formatCurrency(v),
     },
-    { title: 'Descripción', dataIndex: 'descripcion', key: 'descripcion', render: (v) => v ?? '—' },
     {
       title: 'Estado',
       dataIndex: 'activo',

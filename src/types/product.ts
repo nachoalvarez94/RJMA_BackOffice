@@ -1,19 +1,18 @@
-// PROVISIONAL: ajustar si el contrato real difiere.
 export interface Product {
   id: string
-  nombre: string
-  referencia: string
-  precio: number
-  descripcion?: string
   activo: boolean
-  creadoEn: string
+  nombre: string
+  codigoInterno?: string
+  codigoBarras?: string | null
+  precio: number
 }
 
 export interface CreateProductDto {
   nombre: string
-  referencia: string
+  codigoInterno?: string
+  codigoBarras?: string | null
   precio: number
-  descripcion?: string
+  activo?: boolean
 }
 
 export type UpdateProductDto = Partial<CreateProductDto>
