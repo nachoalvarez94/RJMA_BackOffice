@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(gh pr create --title 'feat: scaffold RJMA BackOffice — Fase 1' --body ' *)",
+      "Bash(npx tsc *)"
+    ]
+  }
+}
