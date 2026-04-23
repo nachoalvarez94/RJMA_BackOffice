@@ -4,10 +4,14 @@ import { FileTextOutlined } from '@ant-design/icons'
 import type { Order, OrderLine } from '@/types'
 import { ordersService } from '@/services/api/orders'
 import { invoicesService } from '@/services/api/invoices'
+import { useNameResolver } from '@/hooks/useNameResolver'
+import { clientsService } from '@/services/api/clients'
+import { usersService } from '@/services/api/users'
 import { getErrorMessage } from '@/lib/apiError'
 import { formatCurrency, formatDate } from '@/lib/format'
 
 const ESTADO_COLORS: Record<string, string> = {
+  BORRADOR: 'default',
   PENDIENTE: 'orange',
   COMPLETADO: 'green',
   CANCELADO: 'red',
@@ -15,26 +19,56 @@ const ESTADO_COLORS: Record<string, string> = {
 }
 
 const lineColumns = [
-  { title: 'Producto', dataIndex: 'productoNombre', key: 'productoNombre' },
-  { title: 'Cantidad', dataIndex: 'cantidad', key: 'cantidad', align: 'right' as const },
+  {
+    title: 'Artículo',
+    dataIndex: 'nombreArticulo',
+    key: 'nombreArticulo',
+    ellipsis: true,
+    render: (v: string) => v?.trim(),
+  },
+  {
+    title: 'Cant.',
+    dataIndex: 'cantidad',
+    key: 'cantidad',
+    width: 70,
+    align: 'right' as const,
+  },
   {
     title: 'Precio unit.',
     dataIndex: 'precioUnitario',
     key: 'precioUnitario',
+    width: 100,
     align: 'right' as const,
     render: (v: number) => formatCurrency(v),
+  },
+  {
+    title: 'Dto.',
+    dataIndex: 'descuento',
+    key: 'descuento',
+    width: 70,
+    align: 'right' as const,
+    render: (v: number) => (v ? `${v}%` : '—'),
   },
   {
     title: 'Subtotal',
     dataIndex: 'subtotal',
     key: 'subtotal',
+    width: 100,
+    align: 'right' as const,
+    render: (v: number) => formatCurrency(v),
+  },
+  {
+    title: 'Total línea',
+    dataIndex: 'totalLinea',
+    key: 'totalLinea',
+    width: 100,
     align: 'right' as const,
     render: (v: number) => formatCurrency(v),
   },
 ]
 
 interface OrderDetailModalProps {
-  orderId: string | null
+  orderId: number | null
   open: boolean
   onClose: () => void
   onFacturado?: () => void
@@ -46,12 +80,25 @@ export function OrderDetailModal({ orderId, open, onClose, onFacturado }: OrderD
   const [error, setError] = useState<string | null>(null)
   const [facturando, setFacturando] = useState(false)
 
+  const clientIds = order ? [order.clienteId] : []
+  const userIds = order ? [order.creadoPorId] : []
+  const getClientName = useNameResolver(
+    'clients',
+    clientIds,
+    (id) => clientsService.getById(String(id)).then((c) => c.nombre?.trim() ?? `#${id}`)
+  )
+  const getUserName = useNameResolver(
+    'users',
+    userIds,
+    (id) => usersService.getById(String(id)).then((u) => u.nombre?.trim() ?? `#${id}`)
+  )
+
   useEffect(() => {
-    if (!open || !orderId) return
+    if (!open || !orderId) { setOrder(null); return }
     setLoading(true)
     setError(null)
     ordersService
-      .getById(orderId)
+      .getById(String(orderId))
       .then((data) => { setOrder(data); setLoading(false) })
       .catch((err) => { setError(getErrorMessage(err)); setLoading(false) })
   }, [open, orderId])
@@ -60,8 +107,8 @@ export function OrderDetailModal({ orderId, open, onClose, onFacturado }: OrderD
     if (!order) return
     setFacturando(true)
     try {
-      const factura = await invoicesService.desdePedido(order.id)
-      message.success(`Factura ${factura.numeroFactura} generada correctamente`)
+      const factura = await invoicesService.desdePedido(String(order.id))
+      message.success(`Factura nº ${factura.numeroFactura} generada correctamente`)
       onFacturado?.()
       onClose()
     } catch (err) {
@@ -71,14 +118,14 @@ export function OrderDetailModal({ orderId, open, onClose, onFacturado }: OrderD
     }
   }
 
-  const canFacturar = order && order.pendienteFacturacion && order.estado !== 'FACTURADO'
+  const canFacturar = order?.facturable && order.estado !== 'FACTURADO'
 
   return (
     <Modal
-      title={order ? `Pedido ${order.numeroPedido}` : 'Detalle de pedido'}
+      title={order ? `Pedido nº ${order.numero}` : 'Detalle de pedido'}
       open={open}
       onCancel={onClose}
-      width={720}
+      width={800}
       footer={
         canFacturar ? (
           <Popconfirm
@@ -102,31 +149,48 @@ export function OrderDetailModal({ orderId, open, onClose, onFacturado }: OrderD
       {order && !loading && (
         <>
           <Descriptions column={2} size="small" bordered style={{ marginBottom: 24 }}>
-            <Descriptions.Item label="Nº Pedido">{order.numeroPedido}</Descriptions.Item>
+            <Descriptions.Item label="Nº Pedido">{order.numero}</Descriptions.Item>
+            <Descriptions.Item label="Fecha">{formatDate(order.fecha)}</Descriptions.Item>
+            <Descriptions.Item label="Cliente">{getClientName(order.clienteId)}</Descriptions.Item>
+            <Descriptions.Item label="Vendedor">{getUserName(order.creadoPorId)}</Descriptions.Item>
             <Descriptions.Item label="Estado">
               <Tag color={ESTADO_COLORS[order.estado] ?? 'default'}>{order.estado}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Cliente">{order.clienteNombre}</Descriptions.Item>
-            <Descriptions.Item label="Fecha">{formatDate(order.fecha)}</Descriptions.Item>
-            <Descriptions.Item label="Total" span={2}>
-              <strong>{formatCurrency(order.total)}</strong>
+            <Descriptions.Item label="Cobro">
+              {order.estadoCobro ?? '—'}
+            </Descriptions.Item>
+            {order.observaciones && (
+              <Descriptions.Item label="Observaciones" span={2}>
+                {order.observaciones}
+              </Descriptions.Item>
+            )}
+            <Descriptions.Item label="Total bruto">{formatCurrency(order.totalBruto)}</Descriptions.Item>
+            <Descriptions.Item label="Descuento">{formatCurrency(order.totalDescuento)}</Descriptions.Item>
+            <Descriptions.Item label="Total final">
+              <strong>{formatCurrency(order.totalFinal)}</strong>
+            </Descriptions.Item>
+            <Descriptions.Item label="Importe cobrado">{formatCurrency(order.importeCobrado)}</Descriptions.Item>
+            <Descriptions.Item label="Pendiente" span={2}>
+              <span style={{ color: order.importePendiente > 0 ? '#ff4d4f' : undefined }}>
+                {formatCurrency(order.importePendiente)}
+              </span>
             </Descriptions.Item>
           </Descriptions>
 
           {order.lineas && order.lineas.length > 0 && (
             <Table<OrderLine>
-              rowKey="id"
+              rowKey={(_, idx) => idx ?? 0}
               size="small"
               columns={lineColumns}
               dataSource={order.lineas}
               pagination={false}
               summary={() => (
                 <Table.Summary.Row>
-                  <Table.Summary.Cell index={0} colSpan={3} align="right">
-                    <strong>Total</strong>
+                  <Table.Summary.Cell index={0} colSpan={5} align="right">
+                    <strong>Total final</strong>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={1} align="right">
-                    <strong>{formatCurrency(order.total)}</strong>
+                    <strong>{formatCurrency(order.totalFinal)}</strong>
                   </Table.Summary.Cell>
                 </Table.Summary.Row>
               )}

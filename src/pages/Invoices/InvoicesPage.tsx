@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button, Card, Input, Select, Space, Table, Tag } from 'antd'
-import { SearchOutlined, ReloadOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { SearchOutlined, ReloadOutlined, ThunderboltOutlined, EyeOutlined } from '@ant-design/icons'
+import { FilePdfOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { Invoice } from '@/types'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -9,9 +10,10 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { useInvoices } from '@/hooks/useInvoices'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { BulkInvoiceModal } from './BulkInvoiceModal'
+import { InvoiceDetailModal } from './InvoiceDetailModal'
 
 const ESTADO_COLORS: Record<string, string> = {
-  PENDIENTE: 'orange',
+  EMITIDA: 'blue',
   PAGADA: 'green',
   VENCIDA: 'red',
   ANULADA: 'default',
@@ -21,6 +23,7 @@ export function InvoicesPage() {
   const { invoices, total, loading, error, page, pageSize, setPage, setFilters, refresh } =
     useInvoices()
   const [bulkOpen, setBulkOpen] = useState(false)
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
   const [nombreInput, setNombreInput] = useState('')
   const [estadoInput, setEstadoInput] = useState<string | undefined>(undefined)
 
@@ -34,33 +37,94 @@ export function InvoicesPage() {
   }
 
   const columns: ColumnsType<Invoice> = [
-    { title: 'Nº Factura', dataIndex: 'numeroFactura', key: 'numeroFactura' },
-    { title: 'Cliente', dataIndex: 'clienteNombre', key: 'clienteNombre' },
     {
-      title: 'Nº Pedido',
-      dataIndex: 'numeroPedido',
-      key: 'numeroPedido',
-      render: (v) => v ?? '—',
+      title: 'Nº Factura',
+      dataIndex: 'numeroFactura',
+      key: 'numeroFactura',
+      width: 100,
     },
     {
-      title: 'Fecha',
-      dataIndex: 'fecha',
-      key: 'fecha',
+      title: 'Fecha emisión',
+      dataIndex: 'fechaEmision',
+      key: 'fechaEmision',
+      width: 120,
       render: (v: string) => formatDate(v),
     },
     {
-      title: 'Importe',
-      dataIndex: 'importeTotal',
-      key: 'importeTotal',
-      align: 'right',
-      render: (v: number) => formatCurrency(v),
+      title: 'Cliente',
+      dataIndex: 'nombreCliente',
+      key: 'nombreCliente',
+      ellipsis: true,
+      render: (v: string) => v?.trim() || '—',
+    },
+    {
+      title: 'Doc. fiscal',
+      dataIndex: 'documentoFiscalCliente',
+      key: 'documentoFiscalCliente',
+      width: 130,
+      render: (v?: string) => v?.trim() || '—',
     },
     {
       title: 'Estado',
       dataIndex: 'estado',
       key: 'estado',
+      width: 90,
       render: (estado: string) => (
         <Tag color={ESTADO_COLORS[estado] ?? 'default'}>{estado}</Tag>
+      ),
+    },
+    {
+      title: 'Base imp.',
+      dataIndex: 'baseImponible',
+      key: 'baseImponible',
+      width: 100,
+      align: 'right',
+      render: (v: number) => formatCurrency(v),
+    },
+    {
+      title: 'IVA',
+      dataIndex: 'impuestos',
+      key: 'impuestos',
+      width: 90,
+      align: 'right',
+      render: (v: number) => formatCurrency(v),
+    },
+    {
+      title: 'Total',
+      dataIndex: 'total',
+      key: 'total',
+      width: 100,
+      align: 'right',
+      render: (v: number) => <strong>{formatCurrency(v)}</strong>,
+    },
+    {
+      title: 'Pedido',
+      dataIndex: 'pedidoId',
+      key: 'pedidoId',
+      width: 70,
+      render: (v: number) => `#${v}`,
+    },
+    {
+      title: 'PDF',
+      dataIndex: 'pdfFileName',
+      key: 'pdfFileName',
+      width: 60,
+      align: 'center',
+      render: (v?: string) =>
+        v ? <FilePdfOutlined style={{ color: '#ff4d4f' }} title={v} /> : '—',
+    },
+    {
+      title: 'Acciones',
+      key: 'actions',
+      width: 70,
+      render: (_, invoice) => (
+        <Button
+          size="small"
+          icon={<EyeOutlined />}
+          onClick={() => setSelectedInvoiceId(invoice.id)}
+        >
+          Ver
+        </Button>
       ),
     },
   ]
@@ -73,10 +137,7 @@ export function InvoicesPage() {
         title="Facturas"
         subtitle="Visualización y gestión de facturas"
         actions={
-          <Button
-            icon={<ThunderboltOutlined />}
-            onClick={() => setBulkOpen(true)}
-          >
+          <Button icon={<ThunderboltOutlined />} onClick={() => setBulkOpen(true)}>
             Facturación masiva
           </Button>
         }
@@ -100,7 +161,7 @@ export function InvoicesPage() {
             allowClear
             style={{ width: 160 }}
             options={[
-              { label: 'Pendiente', value: 'PENDIENTE' },
+              { label: 'Emitida', value: 'EMITIDA' },
               { label: 'Pagada', value: 'PAGADA' },
               { label: 'Vencida', value: 'VENCIDA' },
               { label: 'Anulada', value: 'ANULADA' },
@@ -117,6 +178,7 @@ export function InvoicesPage() {
           columns={columns}
           dataSource={invoices}
           loading={loading}
+          scroll={{ x: 'max-content' }}
           locale={{ emptyText: <EmptyState description="No hay facturas registradas" /> }}
           pagination={{
             current: page,
@@ -128,6 +190,12 @@ export function InvoicesPage() {
           }}
         />
       </Card>
+
+      <InvoiceDetailModal
+        invoiceId={selectedInvoiceId}
+        open={!!selectedInvoiceId}
+        onClose={() => setSelectedInvoiceId(null)}
+      />
 
       <BulkInvoiceModal
         open={bulkOpen}

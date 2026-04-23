@@ -12,13 +12,13 @@ const { Text } = Typography
 
 const generadasColumns = [
   { title: 'Nº Factura', dataIndex: 'numeroFactura', key: 'numeroFactura' },
-  { title: 'Cliente', dataIndex: 'clienteNombre', key: 'clienteNombre' },
-  { title: 'Importe', dataIndex: 'importeTotal', key: 'importeTotal', render: (v: number) => formatCurrency(v) },
-  { title: 'Fecha', dataIndex: 'fecha', key: 'fecha', render: (v: string) => formatDate(v) },
+  { title: 'Cliente', dataIndex: 'nombreCliente', key: 'nombreCliente', render: (v: string) => v?.trim() || '—' },
+  { title: 'Total', dataIndex: 'total', key: 'total', render: (v: number) => formatCurrency(v) },
+  { title: 'Fecha emisión', dataIndex: 'fechaEmision', key: 'fechaEmision', render: (v: string) => formatDate(v) },
 ]
 
 const erroresColumns = [
-  { title: 'Pedido ID', dataIndex: 'pedidoId', key: 'pedidoId' },
+  { title: 'Pedido ID', dataIndex: 'pedidoId', key: 'pedidoId', render: (v: number) => `#${v}` },
   { title: 'Motivo', dataIndex: 'motivo', key: 'motivo' },
 ]
 

@@ -1,23 +1,30 @@
-// PROVISIONAL: ajustar si el contrato real difiere.
-export type EstadoPedido = 'PENDIENTE' | 'COMPLETADO' | 'CANCELADO' | 'FACTURADO'
+export type EstadoPedido = 'PENDIENTE' | 'COMPLETADO' | 'CANCELADO' | 'FACTURADO' | 'BORRADOR'
+export type EstadoCobro = 'PENDIENTE' | 'PARCIAL' | 'COMPLETO'
 
 export interface OrderLine {
-  id: string
-  productoId: string
-  productoNombre: string
+  nombreArticulo: string
   cantidad: number
   precioUnitario: number
+  descuento: number
   subtotal: number
+  totalLinea: number
 }
 
 export interface Order {
-  id: string
-  numeroPedido: string
-  clienteId: string
-  clienteNombre: string
+  id: number
+  numero: number
+  clienteId: number
+  creadoPorId: number
   fecha: string
-  total: number
   estado: EstadoPedido
-  pendienteFacturacion: boolean
+  estadoCobro?: EstadoCobro
+  facturable: boolean
+  totalBruto: number
+  totalDescuento: number
+  totalFinal: number
+  importeCobrado: number
+  importePendiente: number
+  observaciones?: string | null
   lineas?: OrderLine[]
+  updatedAt?: string
 }
