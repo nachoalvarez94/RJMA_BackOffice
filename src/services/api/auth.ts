@@ -4,8 +4,9 @@ import { apiClient } from './client'
 export const authService = {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     // Mock local activo cuando VITE_USE_MOCK_AUTH=true (desarrollo sin backend)
+    // Credenciales mock: username=admin / password=admin123
     if (import.meta.env.VITE_USE_MOCK_AUTH === 'true') {
-      if (credentials.email === 'admin@rjma.com' && credentials.password === 'admin123') {
+      if (credentials.username === 'admin' && credentials.password === 'admin123') {
         return {
           token: 'mock-jwt-token-dev',
           user: { id: '1', email: 'admin@rjma.com', name: 'Administrador', role: 'ADMIN' },
@@ -18,7 +19,7 @@ export const authService = {
     if (import.meta.env.DEV) {
       console.group('[RJMA Auth] Login request')
       console.log('URL:', `${apiClient.defaults.baseURL}/auth/login`)
-      console.log('Payload:', { email: credentials.email, password: '***' })
+      console.log('Payload:', { username: credentials.username, password: '***' })
       console.groupEnd()
     }
 
@@ -64,8 +65,8 @@ export const authService = {
       token,
       user: {
         id: String(userObj.id ?? ''),
-        email: (userObj.email as string | undefined) ?? credentials.email,
-        name: ((userObj.nombre ?? userObj.name ?? userObj.username) as string | undefined) ?? credentials.email,
+        email: (userObj.email as string | undefined) ?? '',
+        name: ((userObj.nombre ?? userObj.name ?? userObj.username) as string | undefined) ?? credentials.username,
         role: 'ADMIN',
       },
     }

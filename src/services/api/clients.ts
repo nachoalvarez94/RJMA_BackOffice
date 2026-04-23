@@ -1,4 +1,5 @@
 import type { Client, CreateClientDto, UpdateClientDto, PaginatedResponse } from '@/types'
+import { normalizePaginatedResponse } from '@/lib/apiUtils'
 import { apiClient } from './client'
 
 export interface ClientFilters {
@@ -10,8 +11,8 @@ export interface ClientFilters {
 
 export const clientsService = {
   async getAll(filters: ClientFilters = {}): Promise<PaginatedResponse<Client>> {
-    const { data } = await apiClient.get<PaginatedResponse<Client>>('/admin/clientes', { params: filters })
-    return data
+    const { data } = await apiClient.get<unknown>('/admin/clientes', { params: filters })
+    return normalizePaginatedResponse<Client>(data)
   },
 
   async getById(id: string): Promise<Client> {

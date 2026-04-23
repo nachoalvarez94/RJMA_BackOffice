@@ -17,6 +17,28 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
+if (import.meta.env.DEV) {
+  apiClient.interceptors.response.use(
+    (response) => {
+      if (response.config.url?.includes('/admin/') || response.config.url?.includes('/auth/')) {
+        console.group(`[RJMA API] ${response.config.method?.toUpperCase()} ${response.config.url} → ${response.status}`)
+        console.log('Raw data:', response.data)
+        console.groupEnd()
+      }
+      return response
+    },
+    (error) => {
+      const cfg = error.config
+      console.group(`[RJMA API] ERROR ${cfg?.method?.toUpperCase()} ${cfg?.url}`)
+      console.log('Status:', error.response?.status)
+      console.log('Body:', error.response?.data)
+      console.log('Message:', error.message)
+      console.groupEnd()
+      return Promise.reject(error)
+    }
+  )
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

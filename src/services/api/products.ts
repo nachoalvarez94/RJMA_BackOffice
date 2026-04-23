@@ -1,4 +1,5 @@
 import type { Product, CreateProductDto, UpdateProductDto, PaginatedResponse } from '@/types'
+import { normalizePaginatedResponse } from '@/lib/apiUtils'
 import { apiClient } from './client'
 
 export interface ProductFilters {
@@ -10,8 +11,8 @@ export interface ProductFilters {
 
 export const productsService = {
   async getAll(filters: ProductFilters = {}): Promise<PaginatedResponse<Product>> {
-    const { data } = await apiClient.get<PaginatedResponse<Product>>('/admin/productos', { params: filters })
-    return data
+    const { data } = await apiClient.get<unknown>('/admin/productos', { params: filters })
+    return normalizePaginatedResponse<Product>(data)
   },
 
   async getById(id: string): Promise<Product> {

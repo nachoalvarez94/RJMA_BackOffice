@@ -1,4 +1,5 @@
 import type { Invoice, BulkInvoiceResult, PaginatedResponse } from '@/types'
+import { normalizePaginatedResponse } from '@/lib/apiUtils'
 import { apiClient } from './client'
 
 export interface InvoiceFilters {
@@ -10,8 +11,8 @@ export interface InvoiceFilters {
 
 export const invoicesService = {
   async getAll(filters: InvoiceFilters = {}): Promise<PaginatedResponse<Invoice>> {
-    const { data } = await apiClient.get<PaginatedResponse<Invoice>>('/admin/facturas', { params: filters })
-    return data
+    const { data } = await apiClient.get<unknown>('/admin/facturas', { params: filters })
+    return normalizePaginatedResponse<Invoice>(data)
   },
 
   async getById(id: string): Promise<Invoice> {

@@ -1,4 +1,5 @@
 import type { AdminUser, CreateUserDto, UpdateUserDto, ChangeRolDto, PaginatedResponse } from '@/types'
+import { normalizePaginatedResponse } from '@/lib/apiUtils'
 import { apiClient } from './client'
 
 export interface UserFilters {
@@ -10,8 +11,8 @@ export interface UserFilters {
 
 export const usersService = {
   async getAll(filters: UserFilters = {}): Promise<PaginatedResponse<AdminUser>> {
-    const { data } = await apiClient.get<PaginatedResponse<AdminUser>>('/admin/usuarios', { params: filters })
-    return data
+    const { data } = await apiClient.get<unknown>('/admin/usuarios', { params: filters })
+    return normalizePaginatedResponse<AdminUser>(data)
   },
 
   async getById(id: string): Promise<AdminUser> {

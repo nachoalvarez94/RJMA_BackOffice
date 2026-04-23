@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, Form, Input, Button, Typography, Alert, Space } from 'antd'
-import { LockOutlined, MailOutlined } from '@ant-design/icons'
+import { LockOutlined, UserOutlined } from '@ant-design/icons'
 import { useAuth } from '@/store/auth/AuthContext'
 import { getErrorMessage } from '@/lib/apiError'
 import type { LoginCredentials } from '@/types'
@@ -73,17 +73,15 @@ export function LoginPage() {
           requiredMark={false}
         >
           <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: 'Introduce tu email' },
-              { type: 'email', message: 'Email no válido' },
-            ]}
+            name="username"
+            label="Usuario"
+            rules={[{ required: true, message: 'Introduce tu usuario' }]}
           >
             <Input
-              prefix={<MailOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="admin@rjma.com"
+              prefix={<UserOutlined style={{ color: '#bfbfbf' }} />}
+              placeholder="admin"
               size="large"
+              autoComplete="username"
             />
           </Form.Item>
 
@@ -113,7 +111,7 @@ export function LoginPage() {
         </Form>
 
         <Text type="secondary" style={{ fontSize: 11, textAlign: 'center', display: 'block' }}>
-          Demo: admin@rjma.com / admin123
+          Mock: usuario <strong>admin</strong> / contraseña <strong>admin123</strong>
         </Text>
       </Space>
     </Card>
