@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Card, Input, Select, Space, Table, Tag, message } from 'antd'
+import { Button, Card, Input, Select, Space, Table, Tag, Tooltip } from 'antd'
 import { SearchOutlined, ReloadOutlined, ThunderboltOutlined, EyeOutlined, FilePdfOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { Invoice } from '@/types'
@@ -7,8 +7,6 @@ import { PageHeader } from '@/components/common/PageHeader'
 import { ErrorState } from '@/components/common/ErrorState'
 import { EmptyState } from '@/components/common/EmptyState'
 import { useInvoices } from '@/hooks/useInvoices'
-import { invoicesService } from '@/services/api/invoices'
-import { getErrorMessage } from '@/lib/apiError'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { BulkInvoiceModal } from './BulkInvoiceModal'
 import { InvoiceDetailModal } from './InvoiceDetailModal'
@@ -25,18 +23,6 @@ export function InvoicesPage() {
     useInvoices()
   const [bulkOpen, setBulkOpen] = useState(false)
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
-  const [downloading, setDownloading] = useState<number | null>(null)
-
-  const handleDownloadPdf = async (invoice: Invoice) => {
-    setDownloading(invoice.id)
-    try {
-      await invoicesService.downloadPdf(invoice.id, invoice.pdfFileName)
-    } catch (err) {
-      message.error(getErrorMessage(err))
-    } finally {
-      setDownloading(null)
-    }
-  }
   const [nombreInput, setNombreInput] = useState('')
   const [estadoInput, setEstadoInput] = useState<string | undefined>(undefined)
 
@@ -123,19 +109,17 @@ export function InvoicesPage() {
       key: 'pdfFileName',
       width: 60,
       align: 'center',
-      render: (_v: string | undefined, invoice) =>
-        _v ? (
-          <Button
-            type="text"
-            size="small"
-            icon={<FilePdfOutlined style={{ color: '#ff4d4f' }} />}
-            loading={downloading === invoice.id}
-            onClick={() => handleDownloadPdf(invoice)}
-            title={_v}
-          />
-        ) : (
-          '—'
-        ),
+      render: (v?: string) =>
+        v ? (
+          <Tooltip title="Descarga no disponible — requiere endpoint GET /admin/facturas/{id}/pdf en backend">
+            <Button
+              type="text"
+              size="small"
+              icon={<FilePdfOutlined style={{ color: '#bfbfbf' }} />}
+              disabled
+            />
+          </Tooltip>
+        ) : '—',
     },
     {
       title: 'Acciones',

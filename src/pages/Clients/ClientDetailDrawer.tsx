@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Drawer, Tabs, Descriptions, Table, Button, Space, Tag, Alert,
-  DatePicker, message,
+  DatePicker, Tooltip,
 } from 'antd'
 import { FilePdfOutlined, EyeOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
@@ -9,8 +9,6 @@ import type { Client, Invoice } from '@/types'
 import { StatusTag } from '@/components/common/StatusTag'
 import { InvoiceDetailModal } from '@/pages/Invoices/InvoiceDetailModal'
 import { useClientInvoices } from '@/hooks/useClientInvoices'
-import { invoicesService } from '@/services/api/invoices'
-import { getErrorMessage } from '@/lib/apiError'
 import { formatCurrency, formatDate } from '@/lib/format'
 
 const { RangePicker } = DatePicker
@@ -48,18 +46,6 @@ function ClientDataTab({ client }: { client: Client }) {
 function ClientInvoicesTab({ clienteId }: { clienteId: number }) {
   const { invoices, loading, error, setDateRange } = useClientInvoices(clienteId)
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
-  const [downloading, setDownloading] = useState<number | null>(null)
-
-  const handleDownload = async (invoice: Invoice) => {
-    setDownloading(invoice.id)
-    try {
-      await invoicesService.downloadPdf(invoice.id, invoice.pdfFileName)
-    } catch (err) {
-      message.error(getErrorMessage(err))
-    } finally {
-      setDownloading(null)
-    }
-  }
 
   const columns: ColumnsType<Invoice> = [
     {
@@ -107,24 +93,22 @@ function ClientInvoicesTab({ clienteId }: { clienteId: number }) {
       render: (v: number) => <strong>{formatCurrency(v)}</strong>,
     },
     {
-      title: 'Acciones',
+      title: '',
       key: 'actions',
-      width: 120,
+      width: 80,
       render: (_, invoice) => (
         <Space size={4}>
-          <Button
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => setSelectedInvoiceId(invoice.id)}
-          />
-          {invoice.pdfFileName && (
+          <Tooltip title="Ver detalle">
             <Button
               size="small"
-              icon={<FilePdfOutlined />}
-              loading={downloading === invoice.id}
-              onClick={() => handleDownload(invoice)}
-              title={`Descargar ${invoice.pdfFileName}`}
+              icon={<EyeOutlined />}
+              onClick={() => setSelectedInvoiceId(invoice.id)}
             />
+          </Tooltip>
+          {invoice.pdfFileName && (
+            <Tooltip title="Descarga no disponible — requiere endpoint GET /admin/facturas/{id}/pdf en backend">
+              <Button size="small" icon={<FilePdfOutlined />} disabled />
+            </Tooltip>
           )}
         </Space>
       ),
@@ -136,11 +120,11 @@ function ClientInvoicesTab({ clienteId }: { clienteId: number }) {
       <Space style={{ marginBottom: 16 }}>
         <RangePicker
           format="DD/MM/YYYY"
-          onChange={(_, strings) => {
-            const [desde, hasta] = strings
+          onChange={(dates) => {
+            // Use Dayjs objects to get YYYY-MM-DD for ISO comparison in the hook
             setDateRange({
-              desde: desde || undefined,
-              hasta: hasta || undefined,
+              desde: dates?.[0]?.format('YYYY-MM-DD') ?? undefined,
+              hasta: dates?.[1]?.format('YYYY-MM-DD') ?? undefined,
             })
           }}
           allowClear
@@ -157,7 +141,7 @@ function ClientInvoicesTab({ clienteId }: { clienteId: number }) {
         dataSource={invoices}
         loading={loading}
         pagination={false}
-        locale={{ emptyText: 'Sin facturas para este cliente' }}
+        locale={{ emptyText: 'Sin facturas para este cliente en el período seleccionado' }}
         summary={
           invoices.length > 0
             ? () => (
@@ -210,10 +194,8 @@ export function ClientDetailDrawer({ client, open, onClose }: ClientDetailDrawer
             },
             {
               key: 'facturas',
-              label: clienteId ? `Facturas` : 'Facturas',
-              children: clienteId ? (
-                <ClientInvoicesTab clienteId={clienteId} />
-              ) : null,
+              label: 'Facturas',
+              children: clienteId ? <ClientInvoicesTab clienteId={clienteId} /> : null,
             },
           ]}
         />
