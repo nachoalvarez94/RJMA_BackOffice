@@ -1,22 +1,22 @@
-// Nombres de campo en español para coincidir con el backend RJMA.
-// PROVISIONAL: ajustar si el contrato real difiere.
 export interface Client {
-  id: string
+  id: string        // backend example didn't include id but it's required for CRUD
+  activo: boolean
   nombre: string
-  email: string
+  nombreComercio?: string
+  documentoFiscal?: string
   telefono?: string
   direccion?: string
-  nif?: string
-  activo: boolean
-  creadoEn: string
+  poblacion?: string
 }
 
 export interface CreateClientDto {
   nombre: string
-  email: string
+  nombreComercio?: string
+  documentoFiscal?: string
   telefono?: string
   direccion?: string
-  nif?: string
+  poblacion?: string
+  activo?: boolean
 }
 
 export type UpdateClientDto = Partial<CreateClientDto>

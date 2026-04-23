@@ -74,11 +74,44 @@ export function ClientsPage() {
     setFilters({})
   }
 
+  const t = (v?: string) => v?.trim() || '—'
+
   const columns: ColumnsType<Client> = [
-    { title: 'Nombre', dataIndex: 'nombre', key: 'nombre' },
-    { title: 'Email', dataIndex: 'email', key: 'email' },
-    { title: 'Teléfono', dataIndex: 'telefono', key: 'telefono', render: (v) => v ?? '—' },
-    { title: 'NIF / CIF', dataIndex: 'nif', key: 'nif', render: (v) => v ?? '—' },
+    {
+      title: 'Nombre',
+      dataIndex: 'nombre',
+      key: 'nombre',
+      ellipsis: true,
+      render: (v: string) => t(v),
+    },
+    {
+      title: 'Nombre comercial',
+      dataIndex: 'nombreComercio',
+      key: 'nombreComercio',
+      ellipsis: true,
+      render: (v?: string) => t(v),
+    },
+    {
+      title: 'Doc. fiscal',
+      dataIndex: 'documentoFiscal',
+      key: 'documentoFiscal',
+      width: 140,
+      render: (v?: string) => t(v),
+    },
+    {
+      title: 'Teléfono',
+      dataIndex: 'telefono',
+      key: 'telefono',
+      width: 120,
+      render: (v?: string) => t(v),
+    },
+    {
+      title: 'Población',
+      dataIndex: 'poblacion',
+      key: 'poblacion',
+      ellipsis: true,
+      render: (v?: string) => t(v),
+    },
     {
       title: 'Estado',
       dataIndex: 'activo',

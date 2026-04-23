@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Modal, Form, Input, Button } from 'antd'
+import { Modal, Form, Input, Switch } from 'antd'
 import type { Client, CreateClientDto, UpdateClientDto } from '@/types'
 
 interface ClientFormProps {
@@ -18,29 +18,39 @@ export function ClientForm({ open, client, loading, onSubmit, onCancel }: Client
     if (open) {
       form.setFieldsValue(
         client
-          ? { nombre: client.nombre, email: client.email, telefono: client.telefono, direccion: client.direccion, nif: client.nif }
-          : { nombre: '', email: '', telefono: '', direccion: '', nif: '' }
+          ? {
+              nombre:          client.nombre?.trim()          ?? '',
+              nombreComercio:  client.nombreComercio?.trim()  ?? '',
+              documentoFiscal: client.documentoFiscal?.trim() ?? '',
+              telefono:        client.telefono?.trim()        ?? '',
+              direccion:       client.direccion?.trim()       ?? '',
+              poblacion:       client.poblacion?.trim()       ?? '',
+              activo:          client.activo,
+            }
+          : {
+              nombre: '', nombreComercio: '', documentoFiscal: '',
+              telefono: '', direccion: '', poblacion: '', activo: true,
+            }
       )
     }
   }, [open, client, form])
-
-  const handleFinish = async (values: CreateClientDto) => {
-    await onSubmit(values)
-  }
 
   return (
     <Modal
       title={isEdit ? 'Editar cliente' : 'Nuevo cliente'}
       open={open}
       onCancel={onCancel}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={isEdit ? 'Guardar cambios' : 'Crear cliente'}
+      cancelText="Cancelar"
+      confirmLoading={loading}
       destroyOnClose
       width={560}
     >
       <Form
         form={form}
         layout="vertical"
-        onFinish={handleFinish}
+        onFinish={onSubmit}
         autoComplete="off"
         style={{ marginTop: 16 }}
         requiredMark={false}
@@ -48,30 +58,32 @@ export function ClientForm({ open, client, loading, onSubmit, onCancel }: Client
         <Form.Item name="nombre" label="Nombre" rules={[{ required: true, message: 'Requerido' }]}>
           <Input />
         </Form.Item>
-        <Form.Item
-          name="email"
-          label="Email"
-          rules={[{ required: true, type: 'email', message: 'Email válido requerido' }]}
-        >
+
+        <Form.Item name="nombreComercio" label="Nombre comercial">
           <Input />
         </Form.Item>
+
+        <Form.Item name="documentoFiscal" label="Documento fiscal (NIF / CIF / NNE)">
+          <Input />
+        </Form.Item>
+
         <Form.Item name="telefono" label="Teléfono">
           <Input />
         </Form.Item>
+
         <Form.Item name="direccion" label="Dirección">
           <Input />
         </Form.Item>
-        <Form.Item name="nif" label="NIF / CIF">
+
+        <Form.Item name="poblacion" label="Población">
           <Input />
         </Form.Item>
-        <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-          <Button onClick={onCancel} style={{ marginRight: 8 }}>
-            Cancelar
-          </Button>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            {isEdit ? 'Guardar cambios' : 'Crear cliente'}
-          </Button>
-        </Form.Item>
+
+        {isEdit && (
+          <Form.Item name="activo" label="Estado" valuePropName="checked">
+            <Switch checkedChildren="Activo" unCheckedChildren="Inactivo" />
+          </Form.Item>
+        )}
       </Form>
     </Modal>
   )
