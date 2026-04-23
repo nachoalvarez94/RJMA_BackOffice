@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Modal, Descriptions, Table, Tag, Button, Spin, Alert, Typography } from 'antd'
-import { FilePdfOutlined } from '@ant-design/icons'
+import { Modal, Descriptions, Table, Tag, Button, Spin, Alert, Typography, Space, message } from 'antd'
+import { FilePdfOutlined, DownloadOutlined } from '@ant-design/icons'
 import type { Invoice, InvoiceLine } from '@/types'
 import { invoicesService } from '@/services/api/invoices'
 import { useNameResolver } from '@/hooks/useNameResolver'
@@ -90,6 +90,19 @@ export function InvoiceDetailModal({ invoiceId, open, onClose }: InvoiceDetailMo
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [downloading, setDownloading] = useState(false)
+
+  const handleDownload = async () => {
+    if (!invoice) return
+    setDownloading(true)
+    try {
+      await invoicesService.downloadPdf(invoice.id)
+    } catch (err) {
+      message.error(getErrorMessage(err, 'No se pudo descargar el PDF'))
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   const userIds = invoice ? [invoice.emitidaPorId] : []
   const getUserName = useNameResolver(
@@ -113,7 +126,20 @@ export function InvoiceDetailModal({ invoiceId, open, onClose }: InvoiceDetailMo
       title={invoice ? `Factura nº ${invoice.numeroFactura}` : 'Detalle de factura'}
       open={open}
       onCancel={onClose}
-      footer={<Button onClick={onClose}>Cerrar</Button>}
+      footer={
+        <Space>
+          {invoice?.pdfFileName && (
+            <Button
+              icon={<DownloadOutlined />}
+              loading={downloading}
+              onClick={handleDownload}
+            >
+              Descargar PDF
+            </Button>
+          )}
+          <Button onClick={onClose}>Cerrar</Button>
+        </Space>
+      }
       width={900}
     >
       {loading && <Spin style={{ display: 'block', textAlign: 'center', padding: 32 }} />}

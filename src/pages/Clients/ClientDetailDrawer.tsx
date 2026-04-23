@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import {
   Drawer, Tabs, Descriptions, Table, Button, Space, Tag, Alert,
-  DatePicker, Tooltip,
+  DatePicker, Tooltip, message,
 } from 'antd'
 import { FilePdfOutlined, EyeOutlined } from '@ant-design/icons'
+import { invoicesService } from '@/services/api/invoices'
+import { getErrorMessage } from '@/lib/apiError'
 import type { ColumnsType } from 'antd/es/table'
 import type { Client, Invoice } from '@/types'
 import { StatusTag } from '@/components/common/StatusTag'
@@ -46,6 +48,18 @@ function ClientDataTab({ client }: { client: Client }) {
 function ClientInvoicesTab({ clienteId }: { clienteId: number }) {
   const { invoices, loading, error, setDateRange } = useClientInvoices(clienteId)
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
+  const [downloadingId, setDownloadingId] = useState<number | null>(null)
+
+  const handleDownloadPdf = async (id: number) => {
+    setDownloadingId(id)
+    try {
+      await invoicesService.downloadPdf(id)
+    } catch (err) {
+      message.error(getErrorMessage(err, 'No se pudo descargar el PDF'))
+    } finally {
+      setDownloadingId(null)
+    }
+  }
 
   const columns: ColumnsType<Invoice> = [
     {
@@ -106,8 +120,13 @@ function ClientInvoicesTab({ clienteId }: { clienteId: number }) {
             />
           </Tooltip>
           {invoice.pdfFileName && (
-            <Tooltip title="Descarga no disponible — requiere endpoint GET /admin/facturas/{id}/pdf en backend">
-              <Button size="small" icon={<FilePdfOutlined />} disabled />
+            <Tooltip title="Descargar PDF">
+              <Button
+                size="small"
+                icon={<FilePdfOutlined />}
+                loading={downloadingId === invoice.id}
+                onClick={() => handleDownloadPdf(invoice.id)}
+              />
             </Tooltip>
           )}
         </Space>

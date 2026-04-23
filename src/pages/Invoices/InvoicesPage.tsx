@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { Button, Card, Input, Select, Space, Table, Tag, Tooltip } from 'antd'
+import { Button, Card, Input, Select, Space, Table, Tag, Tooltip, message } from 'antd'
 import { SearchOutlined, ReloadOutlined, ThunderboltOutlined, EyeOutlined, FilePdfOutlined } from '@ant-design/icons'
+import { invoicesService } from '@/services/api/invoices'
+import { getErrorMessage } from '@/lib/apiError'
 import type { ColumnsType } from 'antd/es/table'
 import type { Invoice } from '@/types'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -23,8 +25,20 @@ export function InvoicesPage() {
     useInvoices()
   const [bulkOpen, setBulkOpen] = useState(false)
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
+  const [downloadingId, setDownloadingId] = useState<number | null>(null)
   const [nombreInput, setNombreInput] = useState('')
   const [estadoInput, setEstadoInput] = useState<string | undefined>(undefined)
+
+  const handleDownloadPdf = async (id: number) => {
+    setDownloadingId(id)
+    try {
+      await invoicesService.downloadPdf(id)
+    } catch (err) {
+      message.error(getErrorMessage(err, 'No se pudo descargar el PDF'))
+    } finally {
+      setDownloadingId(null)
+    }
+  }
 
   const handleSearch = () =>
     setFilters({ clienteNombre: nombreInput || undefined, estado: estadoInput })
@@ -109,14 +123,15 @@ export function InvoicesPage() {
       key: 'pdfFileName',
       width: 60,
       align: 'center',
-      render: (v?: string) =>
+      render: (v: string | undefined, invoice: Invoice) =>
         v ? (
-          <Tooltip title="Descarga no disponible — requiere endpoint GET /admin/facturas/{id}/pdf en backend">
+          <Tooltip title="Descargar PDF">
             <Button
               type="text"
               size="small"
-              icon={<FilePdfOutlined style={{ color: '#bfbfbf' }} />}
-              disabled
+              icon={<FilePdfOutlined style={{ color: '#ff4d4f' }} />}
+              loading={downloadingId === invoice.id}
+              onClick={() => handleDownloadPdf(invoice.id)}
             />
           </Tooltip>
         ) : '—',

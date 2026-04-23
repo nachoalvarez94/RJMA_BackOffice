@@ -1,5 +1,7 @@
+import type { AxiosError, AxiosResponse } from 'axios'
 import type { Invoice, BulkInvoiceResult, PaginatedResponse } from '@/types'
 import { normalizePaginatedResponse } from '@/lib/apiUtils'
+import { downloadBlob, extractFilename } from '@/lib/downloadBlob'
 import { apiClient } from './client'
 
 export interface InvoiceFilters {
@@ -33,21 +35,32 @@ export const invoicesService = {
     return data
   },
 
-  // PDF DOWNLOAD — endpoint no confirmado en backend.
-  // El endpoint esperado sería: GET /admin/facturas/{id}/pdf (devuelve blob).
-  // Mientras no esté confirmado, esta función lanza error intencionalmente.
-  // Confirmar con backend y descomentar la implementación real:
-  //
-  // async downloadPdf(id: number, filename?: string): Promise<void> {
-  //   const response = await apiClient.get(`/admin/facturas/${id}/pdf`, { responseType: 'blob' })
-  //   const blob = new Blob([response.data as BlobPart], { type: 'application/pdf' })
-  //   const url = URL.createObjectURL(blob)
-  //   const a = document.createElement('a')
-  //   a.href = url
-  //   a.download = filename ?? `factura-${id}.pdf`
-  //   document.body.appendChild(a)
-  //   a.click()
-  //   document.body.removeChild(a)
-  //   URL.revokeObjectURL(url)
-  // },
+  async downloadPdf(id: number): Promise<void> {
+    let response: AxiosResponse<Blob>
+    try {
+      response = await apiClient.get(`/admin/facturas/${id}/pdf`, { responseType: 'blob' })
+    } catch (err) {
+      // Con responseType:'blob' los errores HTTP llegan con data:Blob en vez de JSON.
+      // Intentamos leer el cuerpo como texto para extraer el mensaje del backend.
+      const axiosErr = err as AxiosError
+      if (axiosErr.response?.data instanceof Blob) {
+        const status = axiosErr.response.status
+        try {
+          const text = await (axiosErr.response.data as Blob).text()
+          const json = JSON.parse(text) as Record<string, unknown>
+          const msg = String(json.message ?? json.error ?? json.detail ?? '')
+          if (msg) throw new Error(`[${status}] ${msg}`)
+        } catch (inner) {
+          if (inner instanceof Error && /^\[\d+\]/.test(inner.message)) throw inner
+        }
+        if (status === 403) throw new Error('No tienes permiso para descargar este PDF')
+        if (status === 404) throw new Error('PDF no encontrado en el servidor')
+        throw new Error(`Error ${status} al descargar el PDF`)
+      }
+      throw err
+    }
+    const disposition = response.headers['content-disposition'] as string | undefined
+    const filename = extractFilename(disposition ?? null, `factura-${id}.pdf`)
+    downloadBlob(response.data, filename)
+  },
 }
