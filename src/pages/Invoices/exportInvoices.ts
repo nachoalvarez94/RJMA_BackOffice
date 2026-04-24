@@ -39,10 +39,10 @@ function invoiceRow(inv: Invoice): (string | number | null | undefined)[] {
 
 /**
  * Genera y descarga un CSV de las facturas recibidas.
- * Nombre del fichero: facturas-YYYY-MM-DD.csv
+ * @param filename  Nombre del fichero. Por defecto: facturas-YYYY-MM-DD.csv
  */
-export function exportInvoicesToCsv(invoices: Invoice[]): void {
+export function exportInvoicesToCsv(invoices: Invoice[], filename?: string): void {
   const csv = buildCsv(HEADERS, invoices.map(invoiceRow))
   const today = new Date().toISOString().slice(0, 10)
-  downloadCsv(csv, `facturas-${today}.csv`)
+  downloadCsv(csv, filename ?? `facturas-${today}.csv`)
 }
