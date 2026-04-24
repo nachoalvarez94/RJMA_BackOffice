@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Button, Card, DatePicker, Input, Select, Space, Table, Tag, Tooltip, message } from 'antd'
-import { SearchOutlined, ReloadOutlined, ThunderboltOutlined, EyeOutlined, FilePdfOutlined } from '@ant-design/icons'
+import { SearchOutlined, ReloadOutlined, ThunderboltOutlined, EyeOutlined, FilePdfOutlined, ExportOutlined } from '@ant-design/icons'
 import { invoicesService } from '@/services/api/invoices'
 import { getErrorMessage } from '@/lib/apiError'
+import { exportInvoicesToCsv } from './exportInvoices'
 import type { ColumnsType } from 'antd/es/table'
 import type { Invoice } from '@/types'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -29,11 +30,12 @@ function invoiceName(invoice: Invoice): string {
 }
 
 export function InvoicesPage() {
-  const { invoices, total, loading, error, page, pageSize, setPage, setFilters, refresh } =
+  const { invoices, total, loading, error, page, pageSize, filters, setPage, setFilters, refresh } =
     useInvoices()
   const [bulkOpen, setBulkOpen] = useState(false)
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
+  const [exporting, setExporting] = useState(false)
 
   // Filter state
   const [nombreInput, setNombreInput] = useState('')
@@ -49,6 +51,25 @@ export function InvoicesPage() {
       message.error(getErrorMessage(err, 'No se pudo descargar el PDF'))
     } finally {
       setDownloadingId(null)
+    }
+  }
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      // Re-fetch with the same applied filters but without pagination,
+      // to export ALL matching invoices (not just the current page).
+      const { fechaDesde, fechaHasta, ...backendFilters } = filters
+      const res = await invoicesService.getAll({ ...backendFilters, pageSize: 500 })
+      let data = res.data
+      // Apply date filter in memory (backend doesn't support these params)
+      if (fechaDesde) data = data.filter((inv) => inv.fechaEmision.slice(0, 10) >= fechaDesde)
+      if (fechaHasta) data = data.filter((inv) => inv.fechaEmision.slice(0, 10) <= fechaHasta)
+      exportInvoicesToCsv(data)
+    } catch (err) {
+      message.error(getErrorMessage(err, 'No se pudo exportar las facturas'))
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -185,9 +206,18 @@ export function InvoicesPage() {
         title="Facturas"
         subtitle="Visualización y gestión de facturas"
         actions={
-          <Button icon={<ThunderboltOutlined />} onClick={() => setBulkOpen(true)}>
-            Facturación masiva
-          </Button>
+          <Space>
+            <Button
+              icon={<ExportOutlined />}
+              loading={exporting}
+              onClick={handleExport}
+            >
+              Exportar CSV
+            </Button>
+            <Button icon={<ThunderboltOutlined />} onClick={() => setBulkOpen(true)}>
+              Facturación masiva
+            </Button>
+          </Space>
         }
       />
 
