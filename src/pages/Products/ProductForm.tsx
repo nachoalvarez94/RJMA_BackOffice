@@ -1,6 +1,13 @@
 import { useEffect } from 'react'
-import { Modal, Form, Input, InputNumber, Switch } from 'antd'
+import { Modal, Form, Input, InputNumber, Select, Switch } from 'antd'
 import type { Product, CreateProductDto, UpdateProductDto } from '@/types'
+
+const UNIDAD_VENTA_OPTIONS = [
+  { label: 'UNIDAD', value: 'UNIDAD' },
+  { label: 'CAJA',   value: 'CAJA' },
+  { label: 'GRANEL', value: 'GRANEL' },
+  { label: 'PESO',   value: 'PESO' },
+]
 
 interface ProductFormProps {
   open: boolean
@@ -24,8 +31,9 @@ export function ProductForm({ open, product, loading, onSubmit, onCancel }: Prod
               codigoBarras:  product.codigoBarras?.trim()  ?? '',
               precio:        product.precio,
               activo:        product.activo,
+              unidadVenta:   product.unidadVenta,
             }
-          : { nombre: '', codigoInterno: '', codigoBarras: '', precio: undefined, activo: true }
+          : { nombre: '', codigoInterno: '', codigoBarras: '', precio: undefined, activo: true, unidadVenta: 'UNIDAD' }
       )
     }
   }, [open, product, form])
@@ -64,6 +72,10 @@ export function ProductForm({ open, product, loading, onSubmit, onCancel }: Prod
 
         <Form.Item name="precio" label="Precio (€)" rules={[{ required: true, message: 'Requerido' }]}>
           <InputNumber min={0} precision={2} style={{ width: '100%' }} addonAfter="€" />
+        </Form.Item>
+
+        <Form.Item name="unidadVenta" label="Unidad de venta" rules={[{ required: true, message: 'Requerido' }]}>
+          <Select options={UNIDAD_VENTA_OPTIONS} />
         </Form.Item>
 
         {isEdit && (

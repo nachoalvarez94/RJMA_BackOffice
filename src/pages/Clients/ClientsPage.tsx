@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { Button, Card, Input, Select, Space, Table, Popconfirm, message } from 'antd'
-import { PlusOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons'
+import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { Client, CreateClientDto, UpdateClientDto } from '@/types'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -11,12 +11,14 @@ import { useClients } from '@/hooks/useClients'
 import { clientsService } from '@/services/api/clients'
 import { getErrorMessage } from '@/lib/apiError'
 import { ClientForm } from './ClientForm'
+import { ClientDetailDrawer } from './ClientDetailDrawer'
 
 export function ClientsPage() {
   const { clients, total, loading, error, page, pageSize, setPage, setFilters, refresh } =
     useClients()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
+  const [detailClient, setDetailClient] = useState<Client | null>(null)
   const [saving, setSaving] = useState(false)
   const [nombreInput, setNombreInput] = useState('')
   const [activoInput, setActivoInput] = useState<boolean | undefined>(undefined)
@@ -122,9 +124,12 @@ export function ClientsPage() {
     {
       title: 'Acciones',
       key: 'actions',
-      width: 180,
+      width: 220,
       render: (_, client) => (
         <Space>
+          <Button size="small" icon={<EyeOutlined />} onClick={() => setDetailClient(client)}>
+            Ver
+          </Button>
           <Button size="small" onClick={() => openEdit(client)}>
             Editar
           </Button>
@@ -220,6 +225,12 @@ export function ClientsPage() {
         loading={saving}
         onSubmit={handleSubmit}
         onCancel={closeModal}
+      />
+
+      <ClientDetailDrawer
+        client={detailClient}
+        open={!!detailClient}
+        onClose={() => setDetailClient(null)}
       />
     </div>
   )

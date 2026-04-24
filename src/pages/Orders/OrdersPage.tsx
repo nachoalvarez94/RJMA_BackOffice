@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { Button, Card, Input, Select, Space, Table, Tag, Tabs, Popconfirm, message, Tooltip } from 'antd'
-import { SearchOutlined, ReloadOutlined, EyeOutlined, FileTextOutlined } from '@ant-design/icons'
+import { SearchOutlined, ReloadOutlined, EyeOutlined, FileTextOutlined, EditOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { Order } from '@/types'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -14,6 +14,7 @@ import { invoicesService } from '@/services/api/invoices'
 import { getErrorMessage } from '@/lib/apiError'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { OrderDetailModal } from './OrderDetailModal'
+import { OrderEditModal } from './OrderEditModal'
 
 const ESTADO_COLORS: Record<string, string> = {
   BORRADOR: 'default',
@@ -49,6 +50,7 @@ function resolveUserName(id: number) {
 function TodosTab() {
   const { orders, total, loading, error, page, pageSize, setPage, setFilters, refresh } = useOrders()
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
+  const [editOrderId, setEditOrderId] = useState<number | null>(null)
   const [nombreInput, setNombreInput] = useState('')
   const [estadoInput, setEstadoInput] = useState<string | undefined>(undefined)
 
@@ -132,13 +134,27 @@ function TodosTab() {
     {
       title: 'Acciones',
       key: 'actions',
-      width: 80,
+      width: 140,
       render: (_, order) => (
-        <Tooltip title="Ver detalle">
-          <Button size="small" icon={<EyeOutlined />} onClick={() => setSelectedOrderId(order.id)}>
-            Ver
-          </Button>
-        </Tooltip>
+        <Space size={4}>
+          <Tooltip title="Ver detalle">
+            <Button size="small" icon={<EyeOutlined />} onClick={() => setSelectedOrderId(order.id)}>
+              Ver
+            </Button>
+          </Tooltip>
+          <Tooltip
+            title={order.estado === 'FACTURADO' ? 'Pedido ya facturado, no editable' : 'Editar pedido'}
+          >
+            <Button
+              size="small"
+              icon={<EditOutlined />}
+              disabled={order.estado === 'FACTURADO'}
+              onClick={() => setEditOrderId(order.id)}
+            >
+              Editar
+            </Button>
+          </Tooltip>
+        </Space>
       ),
     },
   ]
@@ -199,6 +215,12 @@ function TodosTab() {
         open={!!selectedOrderId}
         onClose={() => setSelectedOrderId(null)}
         onFacturado={refresh}
+      />
+      <OrderEditModal
+        orderId={editOrderId}
+        open={!!editOrderId}
+        onClose={() => setEditOrderId(null)}
+        onSaved={refresh}
       />
     </>
   )

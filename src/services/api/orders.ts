@@ -1,4 +1,4 @@
-import type { Order, PaginatedResponse } from '@/types'
+import type { Order, OrderUpdateRequest, PaginatedResponse } from '@/types'
 import { normalizePaginatedResponse } from '@/lib/apiUtils'
 import { apiClient } from './client'
 
@@ -17,6 +17,11 @@ export const ordersService = {
 
   async getById(id: string): Promise<Order> {
     const { data } = await apiClient.get<Order>(`/admin/pedidos/${id}`)
+    return data
+  },
+
+  async update(id: number, payload: OrderUpdateRequest): Promise<Order> {
+    const { data } = await apiClient.put<Order>(`/admin/pedidos/${id}`, payload)
     return data
   },
 

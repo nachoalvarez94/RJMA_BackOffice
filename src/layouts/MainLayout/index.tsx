@@ -7,6 +7,7 @@ import {
   AppstoreOutlined,
   ShoppingCartOutlined,
   FileTextOutlined,
+  AuditOutlined,
   UserOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
@@ -46,6 +47,11 @@ const menuItems = [
     key: '/facturas',
     icon: <FileTextOutlined />,
     label: 'Facturas',
+  },
+  {
+    key: '/cierre-trimestral',
+    icon: <AuditOutlined />,
+    label: 'Cierre trimestral',
   },
   {
     key: '/usuarios',

@@ -2,12 +2,27 @@ export type EstadoPedido = 'PENDIENTE' | 'COMPLETADO' | 'CANCELADO' | 'FACTURADO
 export type EstadoCobro = 'PENDIENTE' | 'PARCIAL' | 'COMPLETO'
 
 export interface OrderLine {
+  id?: number
+  articuloId?: number
   nombreArticulo: string
   cantidad: number
   precioUnitario: number
   descuento: number
   subtotal: number
   totalLinea: number
+}
+
+export interface OrderUpdateLine {
+  articuloId: number
+  cantidad: number
+  descuento?: number
+}
+
+export interface OrderUpdateRequest {
+  clienteId?: number
+  observaciones?: string
+  importeCobrado?: number
+  lineas: OrderUpdateLine[]
 }
 
 export interface Order {
