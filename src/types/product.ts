@@ -1,3 +1,5 @@
+export type UnidadVenta = 'UNIDAD' | 'CAJA' | 'GRANEL' | 'PESO'
+
 export interface Product {
   id: string
   activo: boolean
@@ -5,6 +7,7 @@ export interface Product {
   codigoInterno?: string
   codigoBarras?: string | null
   precio: number
+  unidadVenta: UnidadVenta
 }
 
 export interface CreateProductDto {
@@ -13,6 +16,7 @@ export interface CreateProductDto {
   codigoBarras?: string | null
   precio: number
   activo?: boolean
+  unidadVenta: UnidadVenta
 }
 
 export type UpdateProductDto = Partial<CreateProductDto>

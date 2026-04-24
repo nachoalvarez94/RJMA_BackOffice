@@ -100,6 +100,13 @@ export function ProductsPage() {
       render: (v?: string | null) => t(v),
     },
     {
+      title: 'Unidad venta',
+      dataIndex: 'unidadVenta',
+      key: 'unidadVenta',
+      width: 120,
+      render: (v?: string) => v ?? '—',
+    },
+    {
       title: 'Precio',
       dataIndex: 'precio',
       key: 'precio',
