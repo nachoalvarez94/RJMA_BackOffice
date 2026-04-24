@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { Invoice } from '@/types'
 import { invoicesService, type InvoiceFilters } from '@/services/api/invoices'
 import { getErrorMessage } from '@/lib/apiError'
@@ -19,8 +19,8 @@ interface UseInvoicesReturn {
 const PAGE_SIZE = 20
 
 export function useInvoices(): UseInvoicesReturn {
-  const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [total, setTotal] = useState(0)
+  const [allInvoices, setAllInvoices] = useState<Invoice[]>([])
+  const [backendTotal, setBackendTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [page, setPageState] = useState(1)
@@ -39,12 +39,20 @@ export function useInvoices(): UseInvoicesReturn {
     setLoading(true)
     setError(null)
 
+    // When a date range is active we fetch a large batch and paginate in memory,
+    // because the backend does not support fechaDesde / fechaHasta params.
+    const { fechaDesde, fechaHasta } = filters
+    const hasDate = !!fechaDesde || !!fechaHasta
+    const params: InvoiceFilters = hasDate
+      ? { ...filters, page: undefined, pageSize: 500 }
+      : { ...filters, page, pageSize: PAGE_SIZE }
+
     invoicesService
-      .getAll({ ...filters, page, pageSize: PAGE_SIZE })
+      .getAll(params)
       .then((res) => {
         if (!cancelled) {
-          setInvoices(res.data)
-          setTotal(res.total)
+          setAllInvoices(res.data)
+          setBackendTotal(res.total)
           setLoading(false)
         }
       })
@@ -57,6 +65,26 @@ export function useInvoices(): UseInvoicesReturn {
 
     return () => { cancelled = true }
   }, [filters, page, tick])
+
+  // Date filter applied in memory — no extra network call.
+  const { fechaDesde, fechaHasta } = filters
+  const hasDateFilter = !!fechaDesde || !!fechaHasta
+
+  const filteredInvoices = useMemo(() => {
+    if (!hasDateFilter) return allInvoices
+    return allInvoices.filter((inv) => {
+      const fecha = inv.fechaEmision.slice(0, 10) // YYYY-MM-DD from ISO string
+      if (fechaDesde && fecha < fechaDesde) return false
+      if (fechaHasta && fecha > fechaHasta) return false
+      return true
+    })
+  }, [allInvoices, fechaDesde, fechaHasta, hasDateFilter])
+
+  const invoices = hasDateFilter
+    ? filteredInvoices.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+    : allInvoices
+
+  const total = hasDateFilter ? filteredInvoices.length : backendTotal
 
   return { invoices, total, loading, error, page, pageSize: PAGE_SIZE, filters, setPage, setFilters, refresh }
 }

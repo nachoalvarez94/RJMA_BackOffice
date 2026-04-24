@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Card, Input, Select, Space, Table, Tag, Tooltip, message } from 'antd'
+import { Button, Card, DatePicker, Input, Select, Space, Table, Tag, Tooltip, message } from 'antd'
 import { SearchOutlined, ReloadOutlined, ThunderboltOutlined, EyeOutlined, FilePdfOutlined } from '@ant-design/icons'
 import { invoicesService } from '@/services/api/invoices'
 import { getErrorMessage } from '@/lib/apiError'
@@ -13,11 +13,19 @@ import { formatCurrency, formatDate } from '@/lib/format'
 import { BulkInvoiceModal } from './BulkInvoiceModal'
 import { InvoiceDetailModal } from './InvoiceDetailModal'
 
+const { RangePicker } = DatePicker
+
 const ESTADO_COLORS: Record<string, string> = {
   EMITIDA: 'blue',
   PAGADA: 'green',
   VENCIDA: 'red',
   ANULADA: 'default',
+}
+
+/** Nombre legible de la factura para mostrar en tabla. */
+function invoiceName(invoice: Invoice): string {
+  if (invoice.pdfFileName) return invoice.pdfFileName
+  return `FAC-${invoice.numeroFactura}`
 }
 
 export function InvoicesPage() {
@@ -26,8 +34,12 @@ export function InvoicesPage() {
   const [bulkOpen, setBulkOpen] = useState(false)
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
+
+  // Filter state
   const [nombreInput, setNombreInput] = useState('')
   const [estadoInput, setEstadoInput] = useState<string | undefined>(undefined)
+  const [fechaDesde, setFechaDesde] = useState<string | undefined>(undefined)
+  const [fechaHasta, setFechaHasta] = useState<string | undefined>(undefined)
 
   const handleDownloadPdf = async (id: number) => {
     setDownloadingId(id)
@@ -41,20 +53,33 @@ export function InvoicesPage() {
   }
 
   const handleSearch = () =>
-    setFilters({ clienteNombre: nombreInput || undefined, estado: estadoInput })
+    setFilters({
+      clienteNombre: nombreInput || undefined,
+      estado: estadoInput,
+      fechaDesde,
+      fechaHasta,
+    })
 
   const handleClear = () => {
     setNombreInput('')
     setEstadoInput(undefined)
+    setFechaDesde(undefined)
+    setFechaHasta(undefined)
     setFilters({})
   }
 
   const columns: ColumnsType<Invoice> = [
     {
-      title: 'Nº Factura',
+      title: 'Nº',
       dataIndex: 'numeroFactura',
       key: 'numeroFactura',
-      width: 100,
+      width: 60,
+    },
+    {
+      title: 'Nombre factura',
+      key: 'nombre',
+      ellipsis: true,
+      render: (_, invoice) => invoiceName(invoice),
     },
     {
       title: 'Fecha emisión',
@@ -173,7 +198,7 @@ export function InvoicesPage() {
             value={nombreInput}
             onChange={(e) => setNombreInput(e.target.value)}
             onPressEnter={handleSearch}
-            style={{ width: 240 }}
+            style={{ width: 220 }}
             prefix={<SearchOutlined />}
             allowClear
           />
@@ -182,13 +207,23 @@ export function InvoicesPage() {
             value={estadoInput}
             onChange={setEstadoInput}
             allowClear
-            style={{ width: 160 }}
+            style={{ width: 150 }}
             options={[
               { label: 'Emitida', value: 'EMITIDA' },
               { label: 'Pagada', value: 'PAGADA' },
               { label: 'Vencida', value: 'VENCIDA' },
               { label: 'Anulada', value: 'ANULADA' },
             ]}
+          />
+          <RangePicker
+            format="DD/MM/YYYY"
+            placeholder={['Desde', 'Hasta']}
+            allowClear
+            onChange={(dates) => {
+              // Use Dayjs .format() for YYYY-MM-DD — not the display dateStrings
+              setFechaDesde(dates?.[0]?.format('YYYY-MM-DD') ?? undefined)
+              setFechaHasta(dates?.[1]?.format('YYYY-MM-DD') ?? undefined)
+            }}
           />
           <Button type="primary" onClick={handleSearch}>Buscar</Button>
           <Button icon={<ReloadOutlined />} onClick={handleClear}>Limpiar</Button>

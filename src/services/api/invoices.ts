@@ -5,17 +5,22 @@ import { downloadBlob, extractFilename } from '@/lib/downloadBlob'
 import { apiClient } from './client'
 
 export interface InvoiceFilters {
-  // Backend-confirmed params only.
-  // clienteId, fechaDesde, fechaHasta are NOT confirmed — filter in frontend.
+  // Backend-confirmed params.
   clienteNombre?: string
   estado?: string
   page?: number
   pageSize?: number
+  // Frontend-only — stripped before reaching the backend.
+  fechaDesde?: string   // YYYY-MM-DD
+  fechaHasta?: string   // YYYY-MM-DD
 }
 
 export const invoicesService = {
   async getAll(filters: InvoiceFilters = {}): Promise<PaginatedResponse<Invoice>> {
-    const { data } = await apiClient.get<unknown>('/admin/facturas', { params: filters })
+    // Strip frontend-only date params — backend does not support them.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { fechaDesde: _fd, fechaHasta: _fh, ...params } = filters
+    const { data } = await apiClient.get<unknown>('/admin/facturas', { params })
     return normalizePaginatedResponse<Invoice>(data)
   },
 
