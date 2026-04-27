@@ -7,14 +7,9 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, rjma, backoffice]
 
     steps:
-      - name: Deploy develop over SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.TRUENAS_HOST }}
-          username: ${{ secrets.TRUENAS_USER }}
-          key: ${{ secrets.TRUENAS_SSH_KEY }}
-          script: |
-            sudo -n /mnt/fastpool/apps/rjma-develop/scripts/deploy-develop.sh
+      - name: Deploy develop
+        run: |
+          sudo -n /mnt/fastpool/apps/rjma-develop/scripts/deploy-develop.sh
